@@ -1,0 +1,99 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2709
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \
+import pandas as pd\
+import matplotlib.pyplot as plt\
+\
+# 1. Load the Excel file\
+file_path = "individual_market_medical(1).xlsx"\
+\
+raw = pd.read_excel(\
+    file_path,\
+    sheet_name="Individual_Market_Medical"\
+)\
+\
+# 2. Set the first row as the column headers\
+headers = raw.iloc[0].tolist()\
+\
+plans = raw.iloc[1:].copy()\
+plans.columns = headers\
+\
+# 3. Filter the dataset to keep Indiana plans only\
+indiana = plans[\
+    plans["State Code"].astype(str).str.strip().eq("IN")\
+].copy()\
+\
+# 4. Print the number of Indiana plans remaining\
+print("Indiana plans remaining after filtering:", len(indiana))\
+\
+# 5. Identify and clean the premium and deductible columns\
+premium_column = "Premium Adult Individual Age 40 "\
+deductible_column = "Medical Deductible - Individual - Standard"\
+\
+def numeric_money(series):\
+    cleaned = (\
+        series.astype(str)\
+        .str.replace(r"[$,]", "", regex=True)\
+        .str.strip()\
+        .replace(\{\
+            "nan": None,\
+            "": None,\
+            "Not Applicable": None,\
+            "Included in Medical": None\
+        \})\
+    )\
+\
+    return pd.to_numeric(cleaned, errors="coerce")\
+\
+indiana["Premium"] = numeric_money(\
+    indiana[premium_column]\
+)\
+\
+indiana["Deductible"] = numeric_money(\
+    indiana[deductible_column]\
+)\
+\
+# 6. Keep rows with valid numeric values for both variables\
+plot_data = indiana[\
+    ["Premium", "Deductible"]\
+].dropna()\
+\
+print("Plans included in scatter plot:", len(plot_data))\
+\
+# 7. Generate the scatter plot\
+plt.figure(figsize=(10, 6.5))\
+\
+plt.scatter(\
+    plot_data["Premium"],\
+    plot_data["Deductible"],\
+    alpha=0.45\
+)\
+\
+# 8. Label the axes and title\
+plt.xlabel("Premium \'97 Adult Individual Age 40 ($)")\
+plt.ylabel("Medical Deductible \'97 Individual \'97 Standard ($)")\
+plt.title("Indiana Marketplace Plans: Premium vs. Medical Deductible")\
+\
+# 9. Add gridlines and adjust layout\
+plt.grid(True, alpha=0.25)\
+plt.tight_layout()\
+\
+# 10. Save the graph as a PNG file\
+output_path = "indiana_premium_vs_deductible.png"\
+\
+plt.savefig(\
+    output_path,\
+    dpi=200,\
+    bbox_inches="tight"\
+)\
+\
+plt.show()\
+plt.close()\
+\
+print("PNG saved to:", output_path)\
+}
